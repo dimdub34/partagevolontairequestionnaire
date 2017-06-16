@@ -82,4 +82,4 @@ class Serveur(object):
 
         yield (self._le2mserv.gestionnaire_experience.run_step(
             u"Questionnaire final", self._tous,
-            "display_questionaire_final"))
+            "display_questionnaire_final"))
