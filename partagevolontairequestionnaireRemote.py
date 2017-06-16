@@ -6,7 +6,7 @@ import random
 from twisted.internet import defer
 from client.cltremote import IRemote
 import partagevolontairequestionnaireParams as pms
-from partagevolontairequestionnaireGui import DQuestionnaire
+from partagevolontairequestionnaireGui import DQuestionnaire, DQuestionnaireFinalPVQ
 
 
 logger = logging.getLogger("le2m")
@@ -59,6 +59,28 @@ class RemotePVQ(IRemote):
             ecran_decision = DQuestionnaire(
                 defered, self._le2mclt.automatique, self._le2mclt.screen)
             ecran_decision.show()
+            return defered
+
+    def remote_display_questionnaire_final(self):
+        logger.info(u"{} display_questionnaire_final".format(self._le2mclt.uid))
+        if self.le2mclt.simulation:
+            from datetime import datetime
+            inputs = {}
+            today_year = datetime.now().year
+            inputs['naissance'] = today_year - random.randint(16, 60)
+            inputs['genre'] = random.randint(0, 1)
+            inputs['nationalite'] = random.randint(1, 100)
+            inputs['etudiant'] = random.randint(0, 1)
+            if inputs['etudiant'] == 0:
+                inputs['etudiant_discipline'] = random.randint(1, 10)
+                inputs['etudiant_niveau'] = random.randint(1, 6)
+            return inputs
+
+        else:
+            defered = defer.Deferred()
+            screen = DQuestionnaireFinalPVQ(defered, self.le2mclt.automatique,
+                                   self.le2mclt.screen)
+            screen.show()
             return defered
 
 

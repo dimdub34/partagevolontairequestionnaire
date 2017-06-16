@@ -9,7 +9,7 @@ from util.utili18n import le2mtrans
 import partagevolontairequestionnaireParams as pms
 from partagevolontairequestionnaireTexts import trans_PVQ
 import partagevolontairequestionnaireTexts as texts_PVQ
-from client.cltgui.cltguidialogs import GuiHistorique
+from client.cltgui.cltguidialogs import DQuestFinal
 from client.cltgui.cltguiwidgets import WPeriod, WExplication, WSpinbox
 
 
@@ -166,8 +166,45 @@ class DQuestionnaire(QtGui.QDialog):
         pass
 
 
+class DQuestionnaireFinalPVQ(DQuestFinal):
+    def __init__(self, defered, automatique, parent):
+        DQuestFinal.__init__(self, defered, automatique, parent)
+
+        self._couple.setVisible(False)
+        self._brothers.setVisible(False)
+        self._brothers_rank.setVisible(False)
+        self._sport.setVisible(False)
+        self._sport_competition.setVisible(False)
+        self._sport_individuel.setVisible(False)
+        self._religion_belief.setVisible(False)
+        self._religion_name.setVisible(False)
+        self._religion_place.setVisible(False)
+
+        self.setMinimumSize(0, 0)
+        self.setMaximumSize(16777215, 16777215)
+        self.adjustSize()
+        self.setFixedSize(self.size())
+
+    def _accept(self):
+        try:
+            self._timer_automatique.stop()
+        except AttributeError:
+            pass
+        inputs = self._get_inputs()
+        if not self._automatique:
+            confirm = QtGui.QMessageBox.question(
+                self, le2mtrans(u"Confirmation"),
+                le2mtrans(u"Do you confirm your answers?"),
+                QtGui.QMessageBox.No | QtGui.QMessageBox.Yes)
+            if confirm != QtGui.QMessageBox.Yes:
+                return
+        logger.info(u"Send back: {}".format(inputs))
+        self.accept()
+        self._defered.callback(inputs)
+
+
 if __name__ == "__main__":
     app = QtGui.QApplication([])
-    screen = DQuestionnaire(None, 0, None)
+    screen = DQuestionnaireFinalPVQ(None, 0, None)
     screen.show()
     sys.exit(app.exec_())

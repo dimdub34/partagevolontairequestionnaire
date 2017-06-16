@@ -5,6 +5,7 @@ from collections import OrderedDict
 from twisted.internet import defer
 from util.utili18n import le2mtrans
 import partagevolontairequestionnaireParams as pms
+from PyQt4 import QtGui
 
 
 logger = logging.getLogger("le2m.{}".format(__name__))
@@ -18,6 +19,12 @@ class Serveur(object):
             self._demarrer()
         self._le2mserv.gestionnaire_graphique.add_topartmenu(
             u"Partage volontaire - Questionnaire pour tous", actions)
+
+        # modification du questionnaire final
+        self._le2mserv.gestionnaire_graphique.screen.action_finalquest.\
+            triggered.disconnect()
+        self._le2mserv.gestionnaire_graphique.screen.action_finalquest.\
+            triggered.connect(lambda _: self.demarrer_questionnaire_final())
 
     @defer.inlineCallbacks
     def _demarrer(self):
@@ -58,3 +65,26 @@ class Serveur(object):
         # End of part ==========================================================
         yield (self._le2mserv.gestionnaire_experience.finalize_part(
             "partagevolontairequestionnaire"))
+
+    @defer.inlineCallbacks
+    def demarrer_questionnaire_final(self):
+        if not self._le2mserv.gestionnaire_base.is_created() or \
+        not hasattr(self, "_tous"):
+            QtGui.QMessageBox.warning(
+                self._le2mserv.gestionnaire_graphique.screen,
+                u"Attention",
+                u"Il faut lancer au moins une partie avant de lancer ce "
+                u"questionnaire")
+            return
+
+        confirmation = QtGui.QMessageBox.question(
+            self._le2mserv.gestionnaire_graphique.screen,
+            le2mtrans(u"Confirmation"),
+            le2mtrans(u"Start the final questionnaire?"),
+            QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Ok)
+        if confirmation != QtGui.QMessageBox.Ok:
+            return
+
+        yield (self._le2mserv.gestionnaire_experience.run_step(
+            u"Questionnaire final", self._tous,
+            "display_questionaire_final"))

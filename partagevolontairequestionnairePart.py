@@ -77,6 +77,17 @@ class PartiePVQ(Partie):
         yield (self.remote.callRemote(
             "set_payoffs", self.PVQ_gain_euros, self.PVQ_gain_ecus))
 
+    @defer.inlineCallbacks
+    def display_questionnaire_final(self):
+        logger.debug(u"{} display_questionnaire_final".format(self.joueur))
+        inputs = yield (self.remote.callRemote("display_questionnaire_final"))
+        part_questfinal = self.joueur.get_part("questionnaireFinal")
+        for k, v in inputs.viewitems():
+            setattr(part_questfinal, k, v)
+        self.joueur.info('ok')
+        self.joueur.remove_waitmode()
+
+
 class RepetitionsPVQ(Base):
     __tablename__ = 'partie_partagevolontairequestionnaire_repetitions'
     id = Column(Integer, primary_key=True, autoincrement=True)
