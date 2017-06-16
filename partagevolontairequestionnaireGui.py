@@ -5,6 +5,7 @@ This module contains the GUI
 import sys
 import logging
 from PyQt4 import QtGui, QtCore
+import random
 from util.utili18n import le2mtrans
 import partagevolontairequestionnaireParams as pms
 from partagevolontairequestionnaireTexts import trans_PVQ
@@ -124,9 +125,27 @@ class DQuestionnaire(QtGui.QDialog):
         layout.addWidget(buttons)
 
         if self.automatique:
-            pass #todo
+            self.radio_group_q1.button(random.choice(
+                pms.ECHELLE_ELEVE.keys())).setCkecked(True)
+            self.radio_group_q2_1.button(random.choice(
+                pms.ECHELLE_ACCORD.keys())).setChecked(True)
+            self.radio_group_q2_2.button(random.choice(
+                pms.ECHELLE_ACCORD.keys())).setChecked(True)
+            self.radio_group_q3.button(random.choice(
+                pms.OUI_NON.keys())).setChecked(True)
+            self.radio_group_q4.button(random.choice(
+                pms.NE_SAIT_PAS_ENVIRON.keys())).setChecked(True)
+            if self.radio_group_q4.checkedId() == pms.ENVIRON:
+                self.spinbox_estimation.setValue(random.randint(0, 30))
+            self.timer = QtCore.QTimer()
+            self.timer.timeout.connect(self.accept)
+            self.timer.star(7000)
 
     def accept(self):
+        try:
+            self.timer.stop()
+        except AttributeError:
+            pass
         try:
             for k, v in self.__dict__.items():
                 if type(v) is QtGui.QButtonGroup:
