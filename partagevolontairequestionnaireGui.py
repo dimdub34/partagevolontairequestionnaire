@@ -191,6 +191,8 @@ class DQuestionnaireFinalPVQ(DQuestFinal):
         except AttributeError:
             pass
         inputs = self._get_inputs()
+        if inputs is None:
+            return
         if not self._automatique:
             confirm = QtGui.QMessageBox.question(
                 self, le2mtrans(u"Confirmation"),
