@@ -50,11 +50,6 @@ class Serveur(object):
         
         # Start part ===========================================================
             # init period
-        self._le2mserv.gestionnaire_graphique.infoserv(
-            [None, le2mtrans(u"Period") + u" {}".format(0)])
-        self._le2mserv.gestionnaire_graphique.infoclt(
-            [None, le2mtrans(u"Period") + u" {}".format(0)],
-            fg="white", bg="gray")
         yield (self._le2mserv.gestionnaire_experience.run_func(
             self._tous, "newperiod", 0))
 
