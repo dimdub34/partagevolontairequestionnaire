@@ -126,20 +126,20 @@ class DQuestionnaire(QtGui.QDialog):
 
         if self.automatique:
             self.radio_group_q1.button(random.choice(
-                pms.ECHELLE_ELEVE.keys())).setCkecked(True)
+                pms.ECHELLE_ELEVE.keys())).click()
             self.radio_group_q2_1.button(random.choice(
-                pms.ECHELLE_ACCORD.keys())).setChecked(True)
+                pms.ECHELLE_ACCORD.keys())).click()
             self.radio_group_q2_2.button(random.choice(
-                pms.ECHELLE_ACCORD.keys())).setChecked(True)
+                pms.ECHELLE_ACCORD.keys())).click()
             self.radio_group_q3.button(random.choice(
-                pms.OUI_NON.keys())).setChecked(True)
+                pms.OUI_NON.keys())).click()
             self.radio_group_q4.button(random.choice(
-                pms.NE_SAIT_PAS_ENVIRON.keys())).setChecked(True)
+                pms.NE_SAIT_PAS_ENVIRON.keys())).click()
             if self.radio_group_q4.checkedId() == pms.ENVIRON:
                 self.spinbox_estimation.setValue(random.randint(0, 30))
             self.timer = QtCore.QTimer()
             self.timer.timeout.connect(self.accept)
-            self.timer.star(7000)
+            self.timer.start(7000)
 
     def accept(self):
         try:

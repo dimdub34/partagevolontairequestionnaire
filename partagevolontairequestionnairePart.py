@@ -82,7 +82,7 @@ class PartiePVQ(Partie):
         logger.debug(u"{} display_questionnaire_final".format(self.joueur))
         inputs = yield (self.remote.callRemote("display_questionnaire_final"))
         part_questfinal = self.joueur.get_part("questionnaireFinal")
-        for k, v in inputs.viewitems():
+        for k, v in inputs.items():
             setattr(part_questfinal, k, v)
         self.joueur.info('ok')
         self.joueur.remove_waitmode()
