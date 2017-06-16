@@ -2,7 +2,7 @@
 """
 This module contains the GUI
 """
-
+import sys
 import logging
 from PyQt4 import QtGui, QtCore
 from util.utili18n import le2mtrans
@@ -16,124 +16,158 @@ from client.cltgui.cltguiwidgets import WPeriod, WExplication, WSpinbox
 logger = logging.getLogger("le2m")
 
 
-class GuiDecision(QtGui.QDialog):
-    def __init__(self, defered, automatique, parent, period, historique):
-        super(GuiDecision, self).__init__(parent)
+class DQuestionnaire(QtGui.QDialog):
+    def __init__(self, defered, automatique, parent):
+        super(DQuestionnaire, self).__init__(parent)
 
-        # variables
-        self._defered = defered
-        self._automatique = automatique
-        self._historique = GuiHistorique(self, historique)
-
-        layout = QtGui.QVBoxLayout(self)
-
-        # should be removed if one-shot game
-        wperiod = WPeriod(
-            period=period, ecran_historique=self._historique)
-        layout.addWidget(wperiod)
-
-        wexplanation = WExplication(
-            text=texts_PVQ.get_text_explanation(),
-            size=(450, 80), parent=self)
-        layout.addWidget(wexplanation)
-
-        self._wdecision = WSpinbox(
-            label=texts_PVQ.get_text_label_decision(),
-            minimum=pms.DECISION_MIN, maximum=pms.DECISION_MAX,
-            interval=pms.DECISION_STEP, automatique=self._automatique,
-            parent=self)
-        layout.addWidget(self._wdecision)
-
-        buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok)
-        buttons.accepted.connect(self._accept)
-        layout.addWidget(buttons)
-
-        self.setWindowTitle(trans_PVQ(u"Décision"))
-        self.adjustSize()
-        self.setFixedSize(self.size())
-
-        if self._automatique:
-            self._timer_automatique = QtCore.QTimer()
-            self._timer_automatique.timeout.connect(
-                buttons.button(QtGui.QDialogButtonBox.Ok).click)
-            self._timer_automatique.start(7000)
-                
-    def reject(self):
-        pass
-    
-    def _accept(self):
-        try:
-            self._timer_automatique.stop()
-        except AttributeError:
-            pass
-        decision = self._wdecision.get_value()
-        if not self._automatique:
-            confirmation = QtGui.QMessageBox.question(
-                self, le2mtrans(u"Confirmation"),
-                le2mtrans(u"Do you confirm your choice?"),
-                QtGui.QMessageBox.No | QtGui.QMessageBox.Yes)
-            if confirmation != QtGui.QMessageBox.Yes: 
-                return
-        logger.info(u"Send back {}".format(decision))
-        self.accept()
-        self._defered.callback(decision)
-
-
-class DConfigure(QtGui.QDialog):
-    def __init__(self, parent):
-        QtGui.QDialog.__init__(self, parent)
+        self.defered = defered
+        self.automatique = automatique
 
         layout = QtGui.QVBoxLayout()
         self.setLayout(layout)
 
-        form = QtGui.QFormLayout()
-        layout.addLayout(form)
+        self.wexplication = WExplication(
+            parent=self, text=texts_PVQ.get_text_explanation(), size=(600, 50))
+        layout.addWidget(self.wexplication)
 
-        # treatment
-        self._combo_treatment = QtGui.QComboBox()
-        self._combo_treatment.addItems(
-            [v for k, v in sorted(pms.TREATMENTS_NAMES.items())])
-        self._combo_treatment.setCurrentIndex(pms.TREATMENT)
-        form.addRow(QtGui.QLabel(u"Traitement"), self._combo_treatment)
+        gridlayout = QtGui.QGridLayout()
+        layout.addLayout(gridlayout)
 
-        # nombre de périodes
-        self._spin_periods = QtGui.QSpinBox()
-        self._spin_periods.setMinimum(0)
-        self._spin_periods.setMaximum(100)
-        self._spin_periods.setSingleStep(1)
-        self._spin_periods.setValue(pms.NOMBRE_PERIODES)
-        self._spin_periods.setButtonSymbols(QtGui.QSpinBox.NoButtons)
-        self._spin_periods.setMaximumWidth(50)
-        form.addRow(QtGui.QLabel(u"Nombre de périodes"), self._spin_periods)
+        label_q1 = QtGui.QLabel(
+            u"D’après vous, par rapport à un niveau de prélèvement permettant "
+            u"d’obtenir\nle meilleur gain du groupe, le niveau de prélèvement "
+            u"de votre groupe était: ")
+        gridlayout.addWidget(label_q1, 0, 0)
+        self.radio_group_q1 = QtGui.QButtonGroup()
+        hlayout_q1 = QtGui.QHBoxLayout()
+        for k, v in sorted(pms.ECHELLE_ELEVE.items()):
+            radio = QtGui.QRadioButton(v)
+            self.radio_group_q1.addButton(radio, k)
+            hlayout_q1.addWidget(radio)
+        hlayout_q1.addSpacerItem(
+            QtGui.QSpacerItem(20, 5, QtGui.QSizePolicy.Expanding,
+                              QtGui.QSizePolicy.Minimum))
+        gridlayout.addLayout(hlayout_q1, 0, 1)
 
-        # periode essai
-        self._checkbox_essai = QtGui.QCheckBox()
-        self._checkbox_essai.setChecked(pms.PERIODE_ESSAI)
-        form.addRow(QtGui.QLabel(u"Période d'essai"), self._checkbox_essai)
+        gridlayout.addWidget(QtGui.QLabel(
+            u"Comment jugez-vous les actions des autres personnes de votre "
+            u"groupe: "), 1, 0, 1, 2)
 
-        # taille groupes
-        self._spin_groups = QtGui.QSpinBox()
-        self._spin_groups.setMinimum(0)
-        self._spin_groups.setMaximum(100)
-        self._spin_groups.setSingleStep(1)
-        self._spin_groups.setValue(pms.TAILLE_GROUPES)
-        self._spin_groups.setButtonSymbols(QtGui.QSpinBox.NoButtons)
-        self._spin_groups.setMaximumWidth(50)
-        form.addRow(QtGui.QLabel(u"Taille des groupes"), self._spin_groups)
+        hlayout_q2_1_label = QtGui.QHBoxLayout()
+        hlayout_q2_1_label.addSpacerItem(
+            QtGui.QSpacerItem(20, 5, QtGui.QSizePolicy.Expanding,
+                              QtGui.QSizePolicy.Minimum))
+        hlayout_q2_1_label.addWidget(QtGui.QLabel(u"Egoistes"))
+        gridlayout.addLayout(hlayout_q2_1_label, 2, 0)
+        self.radio_group_q2_1 = QtGui.QButtonGroup()
+        hlayout_q2_1 = QtGui.QHBoxLayout()
+        for k, v in sorted(pms.ECHELLE_ACCORD.items()):
+            radio = QtGui.QRadioButton(v)
+            self.radio_group_q2_1.addButton(radio, k)
+            hlayout_q2_1.addWidget(radio)
+        gridlayout.addLayout(hlayout_q2_1, 2, 1)
 
-        button = QtGui.QDialogButtonBox(
-            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
-        button.accepted.connect(self._accept)
-        button.rejected.connect(self.reject)
-        layout.addWidget(button)
+        hlayout_q2_2_label = QtGui.QHBoxLayout()
+        hlayout_q2_2_label.addSpacerItem(
+            QtGui.QSpacerItem(20, 5, QtGui.QSizePolicy.Expanding,
+                              QtGui.QSizePolicy.Minimum))
+        hlayout_q2_2_label.addWidget(QtGui.QLabel(u"Coopératives"))
+        gridlayout.addLayout(hlayout_q2_2_label, 3, 0)
 
-        self.setWindowTitle(u"Configurer")
-        self.adjustSize()
-        self.setFixedSize(self.size())
+        self.radio_group_q2_2 = QtGui.QButtonGroup()
+        hlayout_q2_2 = QtGui.QHBoxLayout()
+        for k, v in sorted(pms.ECHELLE_ACCORD.items()):
+            radio = QtGui.QRadioButton(v)
+            self.radio_group_q2_2.addButton(radio, k)
+            hlayout_q2_2.addWidget(radio)
+        gridlayout.addLayout(hlayout_q2_2, 3, 1)
 
-    def _accept(self):
-        pms.TREATMENT = self._combo_treatment.currentIndex()
-        pms.PERIODE_ESSAI = self._checkbox_essai.isChecked()
-        pms.NOMBRE_PERIODES = self._spin_periods.value()
-        pms.TAILLE_GROUPES = self._spin_groups.value()
-        self.accept()
+        gridlayout.addWidget(QtGui.QLabel(
+            u"Vous attendiez-vous à un tel comportement de la part de votre "
+            u"groupe?"), 4, 0)
+        self.radio_group_q3 = QtGui.QButtonGroup()
+        hlayout_q3 = QtGui.QHBoxLayout()
+        for k, v in sorted(pms.OUI_NON.items()):
+            radio = QtGui.QRadioButton(v)
+            self.radio_group_q3.addButton(radio, k)
+            hlayout_q3.addWidget(radio)
+        hlayout_q3.addSpacerItem(
+            QtGui.QSpacerItem(20, 5, QtGui.QSizePolicy.Expanding,
+                              QtGui.QSizePolicy.Minimum))
+        gridlayout.addLayout(hlayout_q3, 4, 1)
+
+        gridlayout.addWidget(QtGui.QLabel(
+            u"Quel est d’après vous le niveau de prélèvement individuel "
+            u"qui, s’il \nétait respecté par les 5 personnes du "
+            u"groupe, permettrait d’obtenir \nle gain du groupe maximum?"), 5, 0)
+        self.radio_group_q4 = QtGui.QButtonGroup()
+        hlayout_q4 = QtGui.QHBoxLayout()
+        for k, v in sorted(pms.NE_SAIT_PAS_ENVIRON.items()):
+            radio = QtGui.QRadioButton(v)
+            self.radio_group_q4.addButton(radio, k)
+            hlayout_q4.addWidget(radio)
+        self.spinbox_estimation = QtGui.QSpinBox()
+        self.spinbox_estimation.setMinimum(0)
+        self.spinbox_estimation.setButtonSymbols(QtGui.QSpinBox.NoButtons)
+        self.spinbox_estimation.setFixedWidth(30)
+        self.spinbox_estimation.setEnabled(False)
+        self.radio_group_q4.button(pms.ENVIRON).toggled.connect(
+            self.spinbox_estimation.setEnabled)
+        hlayout_q4.addWidget(self.spinbox_estimation)
+        hlayout_q4.addSpacerItem(
+            QtGui.QSpacerItem(20, 5, QtGui.QSizePolicy.Expanding,
+                              QtGui.QSizePolicy.Minimum))
+        gridlayout.addLayout(hlayout_q4, 5, 1)
+
+        buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok)
+        buttons.accepted.connect(self.accept)
+        layout.addWidget(buttons)
+
+        if self.automatique:
+            pass #todo
+
+    def accept(self):
+        try:
+            for k, v in self.__dict__.items():
+                if type(v) is QtGui.QButtonGroup:
+                    if v.checkedId() == -1:
+                        raise ValueError(u"Il y a au moins une question à "
+                                         u"laquelle vous n'avez pas répondu")
+        except ValueError as e:
+            QtGui.QMessageBox.warning(
+                self, u"Attention", e.message)
+            return
+        else:
+            reponses = dict()
+            reponses["PVQ_appreciation_groupe_prelevement"] = \
+                self.radio_group_q1.checkedId()
+            reponses["PVQ_appreciation_groupe_egoiste"] = \
+                self.radio_group_q2_1.checkedId()
+            reponses["PVQ_appreciation_groupe_cooperatif"] = \
+                self.radio_group_q2_2.checkedId()
+            reponses["PVQ_appreciation_groupe_comportement"] = \
+                self.radio_group_q3.checkedId()
+            reponses["PVQ_prelement_optimal"] = \
+                self.radio_group_q4.checkedId()
+            reponses["PVQ_prelement_optimal_valeur"] = \
+                self.spinbox_estimation.value() if \
+                    self.radio_group_q4.checkedId() == pms.ENVIRON else None
+            if not self.automatique:
+                confirmation = QtGui.QMessageBox.question(
+                    self, u"Confirmation", u"Vous confirmez vos réponses?",
+                    QtGui.QMessageBox.No | QtGui.QMessageBox.Yes)
+                if confirmation != QtGui.QMessageBox.Yes:
+                    return
+            logger.info(u"Send back: {}".format(reponses))
+            super(DQuestionnaire, self).accept()
+            self.defered.callback(reponses)
+
+    def reject(self):
+        pass
+
+
+if __name__ == "__main__":
+    app = QtGui.QApplication([])
+    screen = DQuestionnaire(None, 0, None)
+    screen.show()
+    sys.exit(app.exec_())

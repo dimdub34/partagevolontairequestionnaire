@@ -57,69 +57,25 @@ class PartiePVQ(Partie):
         """
         logger.debug(u"{} Decision".format(self.joueur))
         debut = datetime.now()
-        self.currentperiod.PVQ_decision = yield(self.remote.callRemote(
+        reponses = yield(self.remote.callRemote(
             "display_decision"))
+        for k, v in reponses.items():
+            setattr(self.currentperiod, k, v)
         self.currentperiod.PVQ_decisiontime = (datetime.now() - debut).seconds
-        self.joueur.info(u"{}".format(self.currentperiod.PVQ_decision))
+        for k, v in reponses.items():
+            self.joueur.info(u"{} - {}".format(k, v))
         self.joueur.remove_waitmode()
 
     def compute_periodpayoff(self):
-        """
-        Compute the payoff for the period
-        :return:
-        """
-        logger.debug(u"{} Period Payoff".format(self.joueur))
         self.currentperiod.PVQ_periodpayoff = 0
-
-        # cumulative payoff since the first period
-        if self.currentperiod.PVQ_period < 2:
-            self.currentperiod.PVQ_cumulativepayoff = \
-                self.currentperiod.PVQ_periodpayoff
-        else: 
-            previousperiod = self.periods[self.currentperiod.PVQ_period - 1]
-            self.currentperiod.PVQ_cumulativepayoff = \
-                previousperiod.PVQ_cumulativepayoff + \
-                self.currentperiod.PVQ_periodpayoff
-
-        # we store the period in the self.periodes dictionnary
-        self.periods[self.currentperiod.PVQ_period] = self.currentperiod
-
-        logger.debug(u"{} Period Payoff {}".format(
-            self.joueur,
-            self.currentperiod.PVQ_periodpayoff))
-
-    @defer.inlineCallbacks
-    def display_summary(self, *args):
-        """
-        Send a dictionary with the period content values to the remote.
-        The remote creates the text and the history
-        :param args:
-        :return:
-        """
-        logger.debug(u"{} Summary".format(self.joueur))
-        yield(self.remote.callRemote(
-            "display_summary", self.currentperiod.todict()))
-        self.joueur.info("Ok")
-        self.joueur.remove_waitmode()
+        self.currentperiod.PVQ_cumulativepayoff = 0
 
     @defer.inlineCallbacks
     def compute_partpayoff(self):
-        """
-        Compute the payoff for the part and set it on the remote.
-        The remote stores it and creates the corresponding text for display
-        (if asked)
-        :return:
-        """
-        logger.debug(u"{} Part Payoff".format(self.joueur))
-
-        self.PVQ_gain_ecus = self.currentperiod.PVQ_cumulativepayoff
-        self.PVQ_gain_euros = float(self.PVQ_gain_ecus) * float(pms.TAUX_CONVERSION)
+        self.PVQ_gain_ecus = 0
+        self.PVQ_gain_euros = 0
         yield (self.remote.callRemote(
             "set_payoffs", self.PVQ_gain_euros, self.PVQ_gain_ecus))
-
-        logger.info(u'{} Payoff ecus {} Payoff euros {:.2f}'.format(
-            self.joueur, self.PVQ_gain_ecus, self.PVQ_gain_euros))
-
 
 class RepetitionsPVQ(Base):
     __tablename__ = 'partie_partagevolontairequestionnaire_repetitions'
@@ -129,15 +85,17 @@ class RepetitionsPVQ(Base):
         ForeignKey("partie_partagevolontairequestionnaire.partie_id"))
 
     PVQ_period = Column(Integer)
-    PVQ_treatment = Column(Integer)
-    PVQ_group = Column(Integer)
-    PVQ_decision = Column(Integer)
+    PVQ_appreciation_groupe_prelevement = Column(Integer)
+    PVQ_appreciation_groupe_egoiste = Column(Integer)
+    PVQ_appreciation_groupe_cooperatif = Column(Integer)
+    PVQ_appreciation_groupe_comportement = Column(Integer)
+    PVQ_prelement_optimal = Column(Integer)
+    PVQ_prelement_optimal_valeur = Column(Integer)
     PVQ_decisiontime = Column(Integer)
     PVQ_periodpayoff = Column(Float)
     PVQ_cumulativepayoff = Column(Float)
 
     def __init__(self, period):
-        self.PVQ_treatment = pms.TREATMENT
         self.PVQ_period = period
         self.PVQ_decisiontime = 0
         self.PVQ_periodpayoff = 0
@@ -149,4 +107,3 @@ class RepetitionsPVQ(Base):
         if joueur:
             temp["joueur"] = joueur
         return temp
-
