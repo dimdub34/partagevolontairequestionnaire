@@ -190,14 +190,23 @@ class DQuestionnaireFinalPVQ(DQuestFinal):
         DQuestFinal.__init__(self, defered, automatique, parent)
 
         self._couple.setVisible(False)
+        self._couple.button_group.button(0).click()
         self._brothers.setVisible(False)
+        self._brothers.spinBox.setValue(0)
         self._brothers_rank.setVisible(False)
+        self._brothers_rank.spinBox.setValue(0)
         self._sport.setVisible(False)
+        self._sport.button_group.button(0).click()
         self._sport_competition.setVisible(False)
+        self._sport_competition.button_group.button(0).click()
         self._sport_individuel.setVisible(False)
+        self._sport_individuel.button_group.button(0).click()
         self._religion_belief.setVisible(False)
+        self._religion_belief.combo.setCurrentIndex(1)
         self._religion_name.setVisible(False)
+        self._religion_name.combo.setCurrentIndex(1)
         self._religion_place.setVisible(False)
+        self._religion_place.combo.setCurrentIndex(1)
 
         self.setMinimumSize(0, 0)
         self.setMaximumSize(16777215, 16777215)
@@ -219,6 +228,15 @@ class DQuestionnaireFinalPVQ(DQuestFinal):
                 QtGui.QMessageBox.No | QtGui.QMessageBox.Yes)
             if confirm != QtGui.QMessageBox.Yes:
                 return
+        inputs["couple"] = None
+        inputs["fratrie_nombre"] = None
+        inputs["fratrie_rang"] = None
+        inputs["sportif"] = None
+        inputs["sportif_type"] = None
+        inputs["sportif_competition"] = None
+        inputs["religion_place"] = None
+        inputs["religion_croyance"] = None
+        inputs["religion_nom"] = None
         logger.info(u"Send back: {}".format(inputs))
         self.accept()
         self._defered.callback(inputs)
